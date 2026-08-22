@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema Acadêmico</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body class="textura">
+
+<header class="topbar">
+  <a href="index.html" class="brand"><span class="selo">SA</span> Sistema Acadêmico</a>
+  <nav class="topbar-links">
+    <a href="admin/index.html">Área da coordenação</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <span class="eyebrow">Caderneta digital</span>
+  <h1>Matrículas, notas e frequência em um só lugar.</h1>
+  <p>Acesse como estudante ou professor para consultar disciplinas, lançar notas e acompanhar a situação acadêmica — direto do navegador.</p>
+</section>
+
+<section class="portais">
+  <div class="portal-card">
+    <div class="icone">🎓</div>
+    <h3>Sou estudante</h3>
+    <p>Consulte suas disciplinas, notas, frequência e situação em cada matéria.</p>
+    <div class="acoes">
+      <a class="btn btn-primary" href="aluno/login.html">Entrar</a>
+      <a class="btn btn-ghost" href="aluno/cadastro.html">Criar cadastro</a>
+    </div>
+  </div>
+
+  <div class="portal-card">
+    <div class="icone">📖</div>
+    <h3>Sou professor</h3>
+    <p>Veja suas turmas, os alunos matriculados e lance notas e frequência.</p>
+    <div class="acoes">
+      <a class="btn btn-primary" href="professor/login.html">Entrar</a>
+      <a class="btn btn-ghost" href="professor/cadastro.html">Criar cadastro</a>
+    </div>
+  </div>
+
+  <div class="portal-card">
+    <div class="icone">🏛️</div>
+    <h3>Coordenação</h3>
+    <p>Cadastre cursos, disciplinas e turmas — a base necessária antes de matricular alunos e professores.</p>
+    <div class="acoes">
+      <a class="btn btn-gold" href="admin/index.html">Acessar</a>
+    </div>
+  </div>
+</section>
+
+<div class="shell" style="padding-top:0; text-align:center;">
+  <button class="btn btn-ghost btn-sm" id="btnDemo">Carregar dados de demonstração</button>
+  <p id="msgDemo" style="color:var(--muted); font-size:0.85rem; margin-top:10px;"></p>
+</div>
+
+<footer class="rodape">
+  Sistema Acadêmico — projeto de estudo. Dados salvos localmente neste navegador (localStorage).
+</footer>
+
+<script src="js/db.js"></script>
+<script src="js/seed.js"></script>
+<script>
+  document.getElementById('btnDemo').addEventListener('click', () => {
+    const r = popularDemo();
+    const msg = document.getElementById('msgDemo');
+    if (r.ja_existia) {
+      msg.textContent = 'Já existem dados cadastrados neste navegador — nada foi alterado.';
+    } else {
+      msg.innerHTML = `Dados de exemplo criados!<br>
+        Estudante: matrícula <strong>${r.aluno.matricula}</strong>, senha <strong>${r.aluno.senha}</strong><br>
+        Professor: matrícula <strong>${r.professor.matricula}</strong>, senha <strong>${r.professor.senha}</strong>`;
+    }
+  });
+</script>
+
+</body>
+</html>

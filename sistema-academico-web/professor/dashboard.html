@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel do professor — Sistema Acadêmico</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body class="textura">
+
+<header class="topbar">
+  <a href="../index.html" class="brand"><span class="selo">SA</span> Sistema Acadêmico</a>
+  <nav class="topbar-links">
+    <span id="nomeTopo" style="color:var(--ink); font-weight:600;"></span>
+    <button class="btn btn-ghost btn-sm" id="btnSair">Sair</button>
+  </nav>
+</header>
+
+<div class="shell">
+  <div class="cabecalho-dash">
+    <div>
+      <h1 id="tituloBoasVindas">Olá!</h1>
+      <div class="sub" id="subEspecialidade"></div>
+    </div>
+    <span class="selo-codigo" id="matriculaTag"></span>
+  </div>
+
+  <div class="grade-cards">
+    <div class="card-info">
+      <div class="rotulo">E-mail institucional</div>
+      <div class="valor" style="font-size:1rem;" id="cardEmail">—</div>
+    </div>
+    <div class="card-info">
+      <div class="rotulo">Disciplinas</div>
+      <div class="valor" id="cardQtdDisciplinas">0</div>
+    </div>
+    <div class="card-info">
+      <div class="rotulo">Turmas</div>
+      <div class="valor" id="cardQtdTurmas">0</div>
+    </div>
+    <div class="card-info">
+      <div class="rotulo">Alunos ao todo</div>
+      <div class="valor" id="cardQtdAlunos">0</div>
+    </div>
+  </div>
+
+  <div class="secao">
+    <div class="secao-titulo">
+      <h2>Minhas turmas</h2>
+    </div>
+    <div id="areaTurmas"></div>
+  </div>
+
+  <div class="secao" id="secaoAlunosTurma" style="display:none;">
+    <div class="secao-titulo">
+      <h2 id="tituloTurmaSelecionada">Alunos da turma</h2>
+      <button class="btn btn-ghost btn-sm" id="btnFecharTurma">Fechar</button>
+    </div>
+    <div id="areaAlunosTurma"></div>
+  </div>
+</div>
+
+<footer class="rodape">Sistema Acadêmico — painel do professor.</footer>
+
+<!-- Modal: lançar nota -->
+<div class="modal-fundo" id="modalNota">
+  <div class="modal">
+    <h3>Lançar nota</h3>
+    <p style="color:var(--muted); font-size:0.9rem; margin-top:-8px;" id="infoModalNota"></p>
+    <div class="msg-erro" id="erroModalNota"></div>
+    <div class="campo">
+      <label for="inputNota">Nota (0 a 10)</label>
+      <input type="number" id="inputNota" min="0" max="10" step="0.1">
+    </div>
+    <div class="modal-acoes">
+      <button class="btn btn-ghost" id="btnCancelarNota">Cancelar</button>
+      <button class="btn btn-primary" id="btnConfirmarNota">Lançar nota</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: frequência -->
+<div class="modal-fundo" id="modalFreq">
+  <div class="modal">
+    <h3>Atualizar frequência</h3>
+    <p style="color:var(--muted); font-size:0.9rem; margin-top:-8px;" id="infoModalFreq"></p>
+    <div class="campo">
+      <label for="inputFreq">Frequência (%)</label>
+      <input type="number" id="inputFreq" min="0" max="100" step="1">
+    </div>
+    <div class="modal-acoes">
+      <button class="btn btn-ghost" id="btnCancelarFreq">Cancelar</button>
+      <button class="btn btn-primary" id="btnConfirmarFreq">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/db.js"></script>
+<script src="../js/auth.js"></script>
+<script>
+  const professor = exigirLogin('professor', 'login.html');
+  let turmaSelecionadaAtual = null;
+  let contextoModal = null; // { alunoMatricula, disciplinaCodigo }
+
+  if (professor) {
+    document.getElementById('nomeTopo').textContent = professor.nome;
+    document.getElementById('tituloBoasVindas').textContent = `Olá, ${professor.nome.split(' ')[0]}!`;
+    document.getElementById('subEspecialidade').textContent = professor.especialidade || '';
+    document.getElementById('matriculaTag').textContent = `Matrícula ${professor.matricula}`;
+    document.getElementById('cardEmail').textContent = professor.email;
+
+    renderizarTurmas();
+  }
+
+  function renderizarTurmas() {
+    const disciplinas = DB.Professor.disciplinasDe(professor.matricula);
+    const turmas = DB.Professor.turmasDe(professor.matricula);
+
+    document.getElementById('cardQtdDisciplinas').textContent = disciplinas.length;
+    document.getElementById('cardQtdTurmas').textContent = turmas.length;
+
+    const totalAlunos = new Set(turmas.flatMap((t) => t.alunosMatriculas)).size;
+    document.getElementById('cardQtdAlunos').textContent = totalAlunos;
+
+    const area = document.getElementById('areaTurmas');
+
+    if (turmas.length === 0) {
+      area.innerHTML = `
+        <div class="vazio">
+          <strong>Nenhuma turma vinculada ainda</strong>
+          Peça para a <a href="../admin/index.html">coordenação criar uma disciplina vinculada a você</a> e depois uma turma para essa disciplina.
+        </div>`;
+      return;
+    }
+
+    const linhas = turmas.map((t) => `
+      <tr>
+        <td><strong>${t.disciplinaNome}</strong></td>
+        <td><span class="selo-codigo">${t.codigo}</span></td>
+        <td>Período ${t.periodo}</td>
+        <td>${t.alunosMatriculas.length} aluno(s)</td>
+        <td><button class="btn btn-primary btn-sm" data-turma="${t.codigo}">Ver alunos</button></td>
+      </tr>`).join('');
+
+    area.innerHTML = `
+      <div class="tabela-wrap">
+        <table>
+          <thead><tr><th>Disciplina</th><th>Turma</th><th>Período</th><th>Alunos</th><th></th></tr></thead>
+          <tbody>${linhas}</tbody>
+        </table>
+      </div>`;
+
+    area.querySelectorAll('button[data-turma]').forEach((btn) => {
+      btn.addEventListener('click', () => abrirTurma(btn.dataset.turma));
+    });
+  }
+
+  function abrirTurma(codigoTurma) {
+    turmaSelecionadaAtual = codigoTurma;
+    const turma = DB.Turma.buscarPorCodigo(codigoTurma);
+    if (!turma) return;
+
+    document.getElementById('secaoAlunosTurma').style.display = 'block';
+    document.getElementById('tituloTurmaSelecionada').textContent = `${turma.disciplinaNome} — Turma ${turma.codigo}`;
+    document.getElementById('secaoAlunosTurma').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    renderizarAlunosTurma(turma);
+  }
+
+  function renderizarAlunosTurma(turma) {
+    const alunos = DB.Turma.alunosDe(turma.codigo);
+    const area = document.getElementById('areaAlunosTurma');
+
+    if (alunos.length === 0) {
+      area.innerHTML = `<div class="vazio"><strong>Nenhum aluno matriculado nesta turma ainda.</strong></div>`;
+      return;
+    }
+
+    const linhas = alunos.map((a) => {
+      const m = DB.Matricula.obterOuCriar(a.matricula, turma.disciplinaCodigo);
+      const notasHtml = m.notas.length
+        ? m.notas.map((n) => `<span class="nota-pill">${n.toFixed(1)}</span>`).join('')
+        : '<span style="color:var(--muted); font-size:0.85rem;">Sem notas</span>';
+      const situacaoBadge = m.notas.length === 0
+        ? '<span class="badge badge-neutro">Cursando</span>'
+        : m.aprovado
+          ? '<span class="badge badge-ok">Aprovado</span>'
+          : '<span class="badge badge-alerta">Reprovado</span>';
+
+      return `
+        <tr>
+          <td><strong>${a.nome}</strong><br><span class="selo-codigo" style="margin-top:4px;">Mat. ${a.matricula}</span></td>
+          <td><div class="notas-lista">${notasHtml}</div></td>
+          <td>${m.notas.length ? m.media.toFixed(2) : '—'}</td>
+          <td style="min-width:120px;">
+            <div class="barra-freq"><span style="width:${m.frequencia}%; background:${m.frequencia >= 75 ? 'var(--green)' : 'var(--red)'}"></span></div>
+            <span style="font-size:0.8rem; color:var(--muted);">${m.frequencia}%</span>
+          </td>
+          <td>${situacaoBadge}</td>
+          <td class="acoes-inline">
+            <button class="btn btn-ghost btn-sm" data-nota="${a.matricula}">+ Nota</button>
+            <button class="btn btn-ghost btn-sm" data-freq="${a.matricula}">Frequência</button>
+          </td>
+        </tr>`;
+    }).join('');
+
+    area.innerHTML = `
+      <div class="tabela-wrap">
+        <table>
+          <thead><tr><th>Aluno</th><th>Notas</th><th>Média</th><th>Frequência</th><th>Situação</th><th></th></tr></thead>
+          <tbody>${linhas}</tbody>
+        </table>
+      </div>`;
+
+    area.querySelectorAll('button[data-nota]').forEach((btn) => {
+      btn.addEventListener('click', () => abrirModalNota(Number(btn.dataset.nota), turma));
+    });
+    area.querySelectorAll('button[data-freq]').forEach((btn) => {
+      btn.addEventListener('click', () => abrirModalFreq(Number(btn.dataset.freq), turma));
+    });
+  }
+
+  document.getElementById('btnFecharTurma').addEventListener('click', () => {
+    document.getElementById('secaoAlunosTurma').style.display = 'none';
+    turmaSelecionadaAtual = null;
+  });
+
+  // ---- modal nota ----
+  function abrirModalNota(alunoMatricula, turma) {
+    const aluno = DB.Aluno.buscarPorMatricula(alunoMatricula);
+    contextoModal = { alunoMatricula, disciplinaCodigo: turma.disciplinaCodigo, turma };
+    document.getElementById('infoModalNota').textContent = `${aluno.nome} — ${turma.disciplinaNome}`;
+    document.getElementById('inputNota').value = '';
+    esconderErro('erroModalNota');
+    document.getElementById('modalNota').classList.add('show');
+  }
+
+  document.getElementById('btnCancelarNota').addEventListener('click', () => {
+    document.getElementById('modalNota').classList.remove('show');
+  });
+
+  document.getElementById('btnConfirmarNota').addEventListener('click', () => {
+    esconderErro('erroModalNota');
+    const nota = parseFloat(document.getElementById('inputNota').value);
+
+    try {
+      DB.Matricula.lancarNota(contextoModal.alunoMatricula, contextoModal.disciplinaCodigo, nota);
+      document.getElementById('modalNota').classList.remove('show');
+      renderizarAlunosTurma(contextoModal.turma);
+      renderizarTurmas();
+    } catch (err) {
+      mostrarErro('erroModalNota', err.message);
+    }
+  });
+
+  // ---- modal frequência ----
+  function abrirModalFreq(alunoMatricula, turma) {
+    const aluno = DB.Aluno.buscarPorMatricula(alunoMatricula);
+    const m = DB.Matricula.obterOuCriar(alunoMatricula, turma.disciplinaCodigo);
+    contextoModal = { alunoMatricula, disciplinaCodigo: turma.disciplinaCodigo, turma };
+    document.getElementById('infoModalFreq').textContent = `${aluno.nome} — ${turma.disciplinaNome}`;
+    document.getElementById('inputFreq').value = m.frequencia;
+    document.getElementById('modalFreq').classList.add('show');
+  }
+
+  document.getElementById('btnCancelarFreq').addEventListener('click', () => {
+    document.getElementById('modalFreq').classList.remove('show');
+  });
+
+  document.getElementById('btnConfirmarFreq').addEventListener('click', () => {
+    const freq = parseFloat(document.getElementById('inputFreq').value);
+    DB.Matricula.definirFrequencia(contextoModal.alunoMatricula, contextoModal.disciplinaCodigo, freq);
+    document.getElementById('modalFreq').classList.remove('show');
+    renderizarAlunosTurma(contextoModal.turma);
+  });
+
+  configurarLogout('btnSair', '../index.html');
+</script>
+
+</body>
+</html>

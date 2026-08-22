@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Área da coordenação — Sistema Acadêmico</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body class="textura">
+
+<header class="topbar">
+  <a href="../index.html" class="brand"><span class="selo">SA</span> Sistema Acadêmico</a>
+  <nav class="topbar-links">
+    <a href="../index.html">Página inicial</a>
+  </nav>
+</header>
+
+<div class="shell">
+  <div class="cabecalho-dash">
+    <div>
+      <h1>Área da coordenação</h1>
+      <div class="sub">Cadastre cursos, disciplinas e turmas — a base para estudantes e professores usarem o sistema. Sem login, uso interno.</div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn ativo" data-tab="cursos">Cursos</button>
+    <button class="tab-btn" data-tab="disciplinas">Disciplinas</button>
+    <button class="tab-btn" data-tab="turmas">Turmas</button>
+    <button class="tab-btn" data-tab="matricular">Matricular aluno</button>
+    <button class="tab-btn" data-tab="pessoas">Alunos &amp; Professores</button>
+  </div>
+
+  <!-- CURSOS -->
+  <div class="tab-conteudo ativo" id="tab-cursos">
+    <div class="painel" style="margin-bottom:24px;">
+      <div class="msg-erro" id="erroCurso"></div>
+      <div class="msg-ok" id="okCurso"></div>
+      <form id="formCurso">
+        <div class="linha-2">
+          <div class="campo">
+            <label for="cursoNome">Nome do curso</label>
+            <input type="text" id="cursoNome" placeholder="Ex: Ciência da Computação" required>
+          </div>
+          <div class="campo">
+            <label for="cursoPeriodos">Períodos (1 a 10)</label>
+            <input type="number" id="cursoPeriodos" min="1" max="10" required>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Cadastrar curso</button>
+      </form>
+    </div>
+    <div id="listaCursos"></div>
+  </div>
+
+  <!-- DISCIPLINAS -->
+  <div class="tab-conteudo" id="tab-disciplinas">
+    <div class="painel" style="margin-bottom:24px;">
+      <div class="msg-erro" id="erroDisciplina"></div>
+      <div class="msg-ok" id="okDisciplina"></div>
+      <form id="formDisciplina">
+        <div class="campo">
+          <label for="discNome">Nome da disciplina</label>
+          <input type="text" id="discNome" placeholder="Ex: Estrutura de Dados" required>
+        </div>
+        <div class="campo">
+          <label for="discEmenta">Ementa</label>
+          <textarea id="discEmenta" placeholder="Resumo do conteúdo"></textarea>
+        </div>
+        <div class="linha-2">
+          <div class="campo">
+            <label for="discCarga">Carga horária semanal (máx. 30h)</label>
+            <input type="number" id="discCarga" min="1" max="30" required>
+          </div>
+          <div class="campo">
+            <label for="discProfessor">Professor</label>
+            <select id="discProfessor" required></select>
+          </div>
+        </div>
+        <div class="campo">
+          <label for="discCurso">Curso vinculado</label>
+          <select id="discCurso" required></select>
+        </div>
+        <button type="submit" class="btn btn-primary">Cadastrar disciplina</button>
+      </form>
+    </div>
+    <div id="listaDisciplinas"></div>
+  </div>
+
+  <!-- TURMAS -->
+  <div class="tab-conteudo" id="tab-turmas">
+    <div class="painel" style="margin-bottom:24px;">
+      <div class="msg-erro" id="erroTurma"></div>
+      <div class="msg-ok" id="okTurma"></div>
+      <form id="formTurma">
+        <div class="linha-2">
+          <div class="campo">
+            <label for="turmaDisciplina">Disciplina</label>
+            <select id="turmaDisciplina" required></select>
+          </div>
+          <div class="campo">
+            <label for="turmaPeriodo">Período (ex: 1, 2, 3...)</label>
+            <input type="text" id="turmaPeriodo" maxlength="2" required>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Cadastrar turma</button>
+      </form>
+    </div>
+    <div id="listaTurmas"></div>
+  </div>
+
+  <!-- MATRICULAR ALUNO -->
+  <div class="tab-conteudo" id="tab-matricular">
+    <div class="painel" style="margin-bottom:24px;">
+      <div class="msg-erro" id="erroMatricular"></div>
+      <div class="msg-ok" id="okMatricular"></div>
+      <form id="formMatricular">
+        <div class="linha-2">
+          <div class="campo">
+            <label for="matAluno">Aluno</label>
+            <select id="matAluno" required></select>
+          </div>
+          <div class="campo">
+            <label for="matTurma">Turma</label>
+            <select id="matTurma" required></select>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Matricular na turma</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ALUNOS & PROFESSORES -->
+  <div class="tab-conteudo" id="tab-pessoas">
+    <div class="secao-titulo"><h2>Alunos cadastrados</h2></div>
+    <div id="listaAlunos" style="margin-bottom:32px;"></div>
+    <div class="secao-titulo"><h2>Professores cadastrados</h2></div>
+    <div id="listaProfessores"></div>
+  </div>
+</div>
+
+<footer class="rodape"><a href="../index.html">Voltar à página inicial</a></footer>
+
+<script src="../js/db.js"></script>
+<script src="../js/auth.js"></script>
+<script>
+  // ---- abas ----
+  document.querySelectorAll('.tab-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('ativo'));
+      document.querySelectorAll('.tab-conteudo').forEach((c) => c.classList.remove('ativo'));
+      btn.classList.add('ativo');
+      document.getElementById('tab-' + btn.dataset.tab).classList.add('ativo');
+    });
+  });
+
+  function refrescarTudo() {
+    renderCursos();
+    renderDisciplinas();
+    renderTurmas();
+    renderPessoas();
+    preencherSelects();
+  }
+
+  // ---- CURSOS ----
+  function renderCursos() {
+    const cursos = DB.Curso.listar();
+    const el = document.getElementById('listaCursos');
+    if (cursos.length === 0) {
+      el.innerHTML = '<div class="vazio"><strong>Nenhum curso cadastrado</strong>Cadastre o primeiro curso acima.</div>';
+      return;
+    }
+    el.innerHTML = `
+      <div class="tabela-wrap"><table>
+        <thead><tr><th>Código</th><th>Nome</th><th>Períodos</th><th>Disciplinas</th><th>Turmas</th></tr></thead>
+        <tbody>${cursos.map((c) => `
+          <tr>
+            <td><span class="selo-codigo">${c.codigo}</span></td>
+            <td>${c.nome}</td>
+            <td>${c.periodos}</td>
+            <td>${c.disciplinasCodigos.length}</td>
+            <td>${c.turmasCodigos.length}</td>
+          </tr>`).join('')}</tbody>
+      </table></div>`;
+  }
+
+  document.getElementById('formCurso').addEventListener('submit', (e) => {
+    e.preventDefault();
+    esconderErro('erroCurso');
+    try {
+      DB.Curso.criar({
+        nome: document.getElementById('cursoNome').value,
+        periodos: parseInt(document.getElementById('cursoPeriodos').value, 10),
+      });
+      document.getElementById('formCurso').reset();
+      mostrarOk('okCurso', 'Curso cadastrado com sucesso!');
+      refrescarTudo();
+    } catch (err) {
+      mostrarErro('erroCurso', err.message);
+    }
+  });
+
+  // ---- DISCIPLINAS ----
+  function renderDisciplinas() {
+    const disciplinas = DB.Disciplina.listar();
+    const el = document.getElementById('listaDisciplinas');
+    if (disciplinas.length === 0) {
+      el.innerHTML = '<div class="vazio"><strong>Nenhuma disciplina cadastrada</strong>Cadastre pelo menos um curso e um professor antes.</div>';
+      return;
+    }
+    el.innerHTML = `
+      <div class="tabela-wrap"><table>
+        <thead><tr><th>Código</th><th>Nome</th><th>Curso</th><th>Professor</th><th>Carga horária</th></tr></thead>
+        <tbody>${disciplinas.map((d) => `
+          <tr>
+            <td><span class="selo-codigo">${d.codigo}</span></td>
+            <td>${d.nome}</td>
+            <td>${d.cursoNome || '—'}</td>
+            <td>${d.professorNome}</td>
+            <td>${d.cargaHoraria}h</td>
+          </tr>`).join('')}</tbody>
+      </table></div>`;
+  }
+
+  document.getElementById('formDisciplina').addEventListener('submit', (e) => {
+    e.preventDefault();
+    esconderErro('erroDisciplina');
+    try {
+      DB.Disciplina.criar({
+        nome: document.getElementById('discNome').value,
+        ementa: document.getElementById('discEmenta').value,
+        cargaHoraria: parseInt(document.getElementById('discCarga').value, 10),
+        professorMatricula: document.getElementById('discProfessor').value,
+        cursoCodigo: document.getElementById('discCurso').value,
+      });
+      document.getElementById('formDisciplina').reset();
+      mostrarOk('okDisciplina', 'Disciplina cadastrada com sucesso!');
+      refrescarTudo();
+    } catch (err) {
+      mostrarErro('erroDisciplina', err.message);
+    }
+  });
+
+  // ---- TURMAS ----
+  function renderTurmas() {
+    const turmas = DB.Turma.listar();
+    const el = document.getElementById('listaTurmas');
+    if (turmas.length === 0) {
+      el.innerHTML = '<div class="vazio"><strong>Nenhuma turma cadastrada</strong>Cadastre uma disciplina antes.</div>';
+      return;
+    }
+    el.innerHTML = `
+      <div class="tabela-wrap"><table>
+        <thead><tr><th>Código</th><th>Disciplina</th><th>Período</th><th>Alunos</th></tr></thead>
+        <tbody>${turmas.map((t) => `
+          <tr>
+            <td><span class="selo-codigo">${t.codigo}</span></td>
+            <td>${t.disciplinaNome}</td>
+            <td>${t.periodo}</td>
+            <td>${t.alunosMatriculas.length}</td>
+          </tr>`).join('')}</tbody>
+      </table></div>`;
+  }
+
+  document.getElementById('formTurma').addEventListener('submit', (e) => {
+    e.preventDefault();
+    esconderErro('erroTurma');
+    try {
+      const disciplinaCodigo = document.getElementById('turmaDisciplina').value;
+      const turma = DB.Turma.criar({
+        disciplinaCodigo,
+        periodo: document.getElementById('turmaPeriodo').value,
+      });
+      const disciplina = DB.Disciplina.buscarPorCodigo(disciplinaCodigo);
+      if (disciplina && disciplina.cursoCodigo) {
+        DB.Curso.adicionarTurma(disciplina.cursoCodigo, turma.codigo);
+      }
+      document.getElementById('formTurma').reset();
+      mostrarOk('okTurma', 'Turma cadastrada com sucesso!');
+      refrescarTudo();
+    } catch (err) {
+      mostrarErro('erroTurma', err.message);
+    }
+  });
+
+  // ---- MATRICULAR ALUNO ----
+  document.getElementById('formMatricular').addEventListener('submit', (e) => {
+    e.preventDefault();
+    esconderErro('erroMatricular');
+    try {
+      DB.Aluno.matricularEmTurma(
+        document.getElementById('matAluno').value,
+        document.getElementById('matTurma').value
+      );
+      mostrarOk('okMatricular', 'Aluno matriculado na turma com sucesso!');
+      refrescarTudo();
+    } catch (err) {
+      mostrarErro('erroMatricular', err.message);
+    }
+  });
+
+  // ---- PESSOAS ----
+  function renderPessoas() {
+    const alunos = DB.Aluno.listar();
+    const professores = DB.Professor.listar();
+
+    document.getElementById('listaAlunos').innerHTML = alunos.length === 0
+      ? '<div class="vazio"><strong>Nenhum aluno cadastrado</strong></div>'
+      : `<div class="tabela-wrap"><table>
+          <thead><tr><th>Matrícula</th><th>Nome</th><th>Curso</th><th>Turma</th><th>E-mail</th></tr></thead>
+          <tbody>${alunos.map((a) => `
+            <tr>
+              <td><span class="selo-codigo">${a.matricula}</span></td>
+              <td>${a.nome}</td>
+              <td>${a.curso || '—'}</td>
+              <td>${a.turma || '—'}</td>
+              <td>${a.email}</td>
+            </tr>`).join('')}</tbody>
+        </table></div>`;
+
+    document.getElementById('listaProfessores').innerHTML = professores.length === 0
+      ? '<div class="vazio"><strong>Nenhum professor cadastrado</strong></div>'
+      : `<div class="tabela-wrap"><table>
+          <thead><tr><th>Matrícula</th><th>Nome</th><th>Especialidade</th><th>Disciplinas</th><th>E-mail</th></tr></thead>
+          <tbody>${professores.map((p) => `
+            <tr>
+              <td><span class="selo-codigo">${p.matricula}</span></td>
+              <td>${p.nome}</td>
+              <td>${p.especialidade}</td>
+              <td>${p.disciplinasProf.length}</td>
+              <td>${p.email}</td>
+            </tr>`).join('')}</tbody>
+        </table></div>`;
+  }
+
+  // ---- selects auxiliares ----
+  function preencherSelects() {
+    const cursos = DB.Curso.listar();
+    const professores = DB.Professor.listar();
+    const disciplinas = DB.Disciplina.listar();
+    const turmas = DB.Turma.listar();
+    const alunos = DB.Aluno.listar();
+
+    document.getElementById('discProfessor').innerHTML = professores.length
+      ? professores.map((p) => `<option value="${p.matricula}">${p.nome} (mat. ${p.matricula})</option>`).join('')
+      : '<option value="">Cadastre um professor primeiro</option>';
+
+    document.getElementById('discCurso').innerHTML = cursos.length
+      ? cursos.map((c) => `<option value="${c.codigo}">${c.nome} (${c.codigo})</option>`).join('')
+      : '<option value="">Cadastre um curso primeiro</option>';
+
+    document.getElementById('turmaDisciplina').innerHTML = disciplinas.length
+      ? disciplinas.map((d) => `<option value="${d.codigo}">${d.nome} (${d.codigo})</option>`).join('')
+      : '<option value="">Cadastre uma disciplina primeiro</option>';
+
+    document.getElementById('matAluno').innerHTML = alunos.length
+      ? alunos.map((a) => `<option value="${a.matricula}">${a.nome} (mat. ${a.matricula})</option>`).join('')
+      : '<option value="">Nenhum aluno cadastrado</option>';
+
+    document.getElementById('matTurma').innerHTML = turmas.length
+      ? turmas.map((t) => `<option value="${t.codigo}">${t.disciplinaNome} — ${t.codigo}</option>`).join('')
+      : '<option value="">Nenhuma turma cadastrada</option>';
+  }
+
+  function mostrarOk(id, msg) {
+    const el = document.getElementById(id);
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 3500);
+  }
+
+  refrescarTudo();
+</script>
+
+</body>
+</html>

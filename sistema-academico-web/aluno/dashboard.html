@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel do estudante — Sistema Acadêmico</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body class="textura">
+
+<header class="topbar">
+  <a href="../index.html" class="brand"><span class="selo">SA</span> Sistema Acadêmico</a>
+  <nav class="topbar-links">
+    <span id="nomeTopo" style="color:var(--ink); font-weight:600;"></span>
+    <button class="btn btn-ghost btn-sm" id="btnSair">Sair</button>
+  </nav>
+</header>
+
+<div class="shell">
+  <div class="cabecalho-dash">
+    <div>
+      <h1 id="tituloBoasVindas">Olá!</h1>
+      <div class="sub" id="subCurso"></div>
+    </div>
+    <span class="selo-codigo" id="matriculaTag"></span>
+  </div>
+
+  <div class="grade-cards">
+    <div class="card-info">
+      <div class="rotulo">E-mail acadêmico</div>
+      <div class="valor" style="font-size:1rem;" id="cardEmail">—</div>
+    </div>
+    <div class="card-info">
+      <div class="rotulo">Disciplinas matriculadas</div>
+      <div class="valor" id="cardQtdDisciplinas">0</div>
+    </div>
+    <div class="card-info">
+      <div class="rotulo">Média geral</div>
+      <div class="valor" id="cardMediaGeral">—</div>
+    </div>
+    <div class="card-info">
+      <div class="rotulo">Situação geral</div>
+      <div class="valor" id="cardSituacaoGeral">—</div>
+    </div>
+  </div>
+
+  <div class="secao">
+    <div class="secao-titulo">
+      <h2>Minhas disciplinas, notas e frequência</h2>
+    </div>
+    <div id="areaDisciplinas"></div>
+  </div>
+
+  <div class="secao">
+    <div class="secao-titulo">
+      <h2>Meus dados</h2>
+    </div>
+    <div class="painel">
+      <div class="linha-2">
+        <div class="campo">
+          <label>Nome completo</label>
+          <input type="text" id="dadoNome" disabled>
+        </div>
+        <div class="campo">
+          <label>CPF</label>
+          <input type="text" id="dadoCpf" disabled>
+        </div>
+      </div>
+      <div class="linha-2">
+        <div class="campo">
+          <label>Curso</label>
+          <input type="text" id="dadoCurso" disabled>
+        </div>
+        <div class="campo">
+          <label>Data de nascimento</label>
+          <input type="text" id="dadoNascimento" disabled>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer class="rodape">Sistema Acadêmico — painel do estudante.</footer>
+
+<script src="../js/db.js"></script>
+<script src="../js/auth.js"></script>
+<script>
+  const aluno = exigirLogin('aluno', 'login.html');
+
+  if (aluno) {
+    document.getElementById('nomeTopo').textContent = aluno.nome;
+    document.getElementById('tituloBoasVindas').textContent = `Olá, ${aluno.nome.split(' ')[0]}!`;
+    document.getElementById('subCurso').textContent = aluno.curso ? `${aluno.curso} · ${aluno.cursoCodigo}` : 'Curso não informado';
+    document.getElementById('matriculaTag').textContent = `Matrícula ${aluno.matricula}`;
+    document.getElementById('cardEmail').textContent = aluno.email;
+
+    document.getElementById('dadoNome').value = aluno.nome;
+    document.getElementById('dadoCpf').value = aluno.cpf;
+    document.getElementById('dadoCurso').value = aluno.curso || '—';
+    document.getElementById('dadoNascimento').value = aluno.dataNasc || '—';
+
+    const historico = DB.Aluno.historico(aluno.matricula);
+    document.getElementById('cardQtdDisciplinas').textContent = historico.length;
+
+    const areaDisciplinas = document.getElementById('areaDisciplinas');
+
+    if (historico.length === 0) {
+      areaDisciplinas.innerHTML = `
+        <div class="vazio">
+          <strong>Nenhuma disciplina ainda</strong>
+          Assim que você for matriculado em uma turma, as disciplinas, notas e frequência aparecerão aqui.
+        </div>`;
+      document.getElementById('cardMediaGeral').textContent = '—';
+      document.getElementById('cardSituacaoGeral').textContent = '—';
+    } else {
+      let somaMedias = 0;
+      let aprovadasCount = 0;
+
+      const linhas = historico.map((m) => {
+        somaMedias += m.media;
+        if (m.aprovado) aprovadasCount++;
+
+        const notasHtml = m.notas.length
+          ? m.notas.map((n) => `<span class="nota-pill">${n.toFixed(1)}</span>`).join('')
+          : '<span style="color:var(--muted); font-size:0.85rem;">Sem notas lançadas</span>';
+
+        const situacaoBadge = m.notas.length === 0
+          ? '<span class="badge badge-neutro">Cursando</span>'
+          : m.aprovado
+            ? '<span class="badge badge-ok">Aprovado</span>'
+            : '<span class="badge badge-alerta">Reprovado</span>';
+
+        return `
+          <tr>
+            <td><strong>${m.disciplinaNome}</strong><br><span class="selo-codigo" style="margin-top:4px;">${m.disciplinaCodigo}</span></td>
+            <td><div class="notas-lista">${notasHtml}</div></td>
+            <td>${m.notas.length ? m.media.toFixed(2) : '—'}</td>
+            <td style="min-width:140px;">
+              <div class="barra-freq"><span style="width:${m.frequencia}%; background:${m.frequencia >= 75 ? 'var(--green)' : 'var(--red)'}"></span></div>
+              <span style="font-size:0.8rem; color:var(--muted);">${m.frequencia}%</span>
+            </td>
+            <td>${situacaoBadge}</td>
+          </tr>`;
+      }).join('');
+
+      areaDisciplinas.innerHTML = `
+        <div class="tabela-wrap">
+          <table>
+            <thead>
+              <tr><th>Disciplina</th><th>Notas</th><th>Média</th><th>Frequência</th><th>Situação</th></tr>
+            </thead>
+            <tbody>${linhas}</tbody>
+          </table>
+        </div>`;
+
+      const mediaGeral = somaMedias / historico.length;
+      document.getElementById('cardMediaGeral').textContent = mediaGeral.toFixed(2);
+
+      const situacaoGeralEl = document.getElementById('cardSituacaoGeral');
+      if (aprovadasCount === historico.length) {
+        situacaoGeralEl.textContent = 'Regular';
+        situacaoGeralEl.classList.add('ok');
+      } else {
+        situacaoGeralEl.textContent = 'Atenção';
+        situacaoGeralEl.classList.add('alerta');
+      }
+    }
+  }
+
+  configurarLogout('btnSair', '../index.html');
+</script>
+
+</body>
+</html>
